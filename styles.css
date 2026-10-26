@@ -1,0 +1,285 @@
+:root {
+  --bg: #f3efe6;
+  --paper: #fffcf7;
+  --ink: #1c1915;
+  --muted: #4a453c;
+  --line: #e3d9c8;
+  --link: #0c4a57;
+  --accent: #8d3b28;
+  --callout: #f6efe2;
+  --measure: 42rem;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Iowan Old Style", Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+}
+
+body::before {
+  content: "";
+  display: block;
+  height: 4px;
+  background: var(--accent);
+}
+
+.skip {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  transform: translateY(-150%);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0.4rem 0.7rem;
+  z-index: 2;
+}
+
+.skip:focus {
+  transform: none;
+}
+
+.shell {
+  width: min(100% - 2.5rem, var(--measure));
+  margin: 0 auto;
+  padding: 2.25rem 0 4rem;
+}
+
+.site-header p {
+  margin: 0;
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  scroll-margin-top: 1rem;
+}
+
+h1 {
+  margin: 0.45rem 0 0.6rem;
+  font-size: 2rem;
+}
+
+h2 {
+  margin: 2.6rem 0 0.8rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--line);
+  font-size: 1.4rem;
+}
+
+h3 {
+  margin: 1.5rem 0 0.4rem;
+  font-size: 1.08rem;
+}
+
+p,
+li {
+  overflow-wrap: break-word;
+}
+
+a {
+  color: var(--link);
+  text-underline-offset: 0.16em;
+}
+
+a:hover {
+  color: #062f38;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.meta {
+  margin: 0;
+  color: var(--muted);
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-size: 0.92rem;
+}
+
+.lede {
+  font-size: 1.15rem;
+  line-height: 1.6;
+}
+
+.toc {
+  margin: 1.6rem 0 0.4rem;
+  padding: 0.85rem 1rem 1rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.toc p {
+  margin: 0 0 0.35rem;
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.toc ol {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.toc li {
+  margin: 0.15rem 0;
+}
+
+.pipeline {
+  list-style: none;
+  margin: 1rem 0 1.4rem;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.pipeline li {
+  margin: 0;
+  padding: 0.85rem 0.95rem 0.95rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.pipeline p {
+  margin: 0.35rem 0 0;
+}
+
+.step {
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.example,
+.callout {
+  margin: 1.2rem 0;
+  padding: 0.9rem 1rem;
+  background: var(--paper);
+  border-radius: 10px;
+}
+
+.example {
+  border-left: 3px solid var(--accent);
+}
+
+.callout {
+  background: var(--callout);
+  border: 1px solid #e0d3be;
+}
+
+.example p,
+.callout p {
+  margin: 0.35rem 0 0;
+}
+
+.example p:first-child,
+.callout p:first-child {
+  margin-top: 0;
+}
+
+.label {
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.refs {
+  padding-left: 1.2rem;
+}
+
+.refs li {
+  margin: 0.35rem 0;
+}
+
+.site-footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-size: 0.92rem;
+}
+
+.site-footer p {
+  margin: 0.4rem 0;
+}
+
+@media (min-width: 720px) {
+  body {
+    font-size: 1.125rem;
+  }
+
+  h1 {
+    font-size: 2.45rem;
+  }
+
+  .pipeline {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  body::before,
+  .skip,
+  .toc {
+    display: none;
+  }
+
+  a {
+    color: #000;
+  }
+
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    word-break: break-all;
+  }
+
+  .shell {
+    width: auto;
+    padding: 0;
+  }
+}

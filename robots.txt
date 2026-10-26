@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://yowang.github.io/ai-image-to-video/sitemap.xml

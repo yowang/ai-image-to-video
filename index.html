@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Image to Video: How a Still Frame Becomes a Short Clip</title>
+  <meta name="description" content="How image-to-video systems encode a still, add motion and camera, and decode frames, with notes on resolution, duration, identity drift, and hosted tools.">
+  <meta name="robots" content="index, follow">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#f3efe6">
+  <link rel="canonical" href="https://yowang.github.io/ai-image-to-video/">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="sitemap" type="application/xml" title="Sitemap" href="sitemap.xml">
+  <meta property="og:title" content="Image to Video: How a Still Frame Becomes a Short Clip">
+  <meta property="og:description" content="How image-to-video systems encode a still, add motion and camera, and decode frames, with notes on resolution, duration, identity drift, and hosted tools.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://yowang.github.io/ai-image-to-video/">
+  <meta property="og:locale" content="en_US">
+  <meta property="article:modified_time" content="2026-10-26">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Image to Video: How a Still Frame Becomes a Short Clip">
+  <meta name="twitter:description" content="How image-to-video systems encode a still, add motion and camera, and decode frames, with notes on resolution, duration, identity drift, and hosted tools.">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Image to video: how a still frame becomes a short clip",
+    "description": "How image-to-video systems encode a still, add motion and camera, and decode frames, with notes on resolution, duration, identity drift, and hosted tools.",
+    "datePublished": "2026-10-26",
+    "dateModified": "2026-10-26",
+    "inLanguage": "en",
+    "mainEntityOfPage": "https://yowang.github.io/ai-image-to-video/",
+    "author": {
+      "@type": "Organization",
+      "name": "Image to Video Notes",
+      "url": "https://yowang.github.io/ai-image-to-video/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <div class="shell">
+    <header class="site-header">
+      <p>Notes on generative video</p>
+    </header>
+    <main id="content" tabindex="-1">
+      <article>
+        <header>
+          <h1>Image to video: how a still frame becomes a short clip</h1>
+          <p class="meta">Technical note for developers and creators. Updated <time datetime="2026-10-26">26 October 2026</time>.</p>
+        </header>
+
+        <p class="lede">Image-to-video is the task of turning one still into a short moving picture. You start from a frame you already have — a product photograph, a character design, a storyboard panel — and a model synthesizes the frames that follow. Developers meet the task when they need to see what a video model is actually conditioned on. Creators meet it when they want to test camera motion, or a small action, without booking a shoot.</p>
+
+        <p>A timeline pan works differently. A Ken Burns move resamples pixels that already exist in the file. Image-to-video proposes pixels that were never captured: the far side of a cup, the next position of a hand, parallax in the street behind a walking subject. Anything the still occludes has to be guessed. The practical question is which parts of the image the model may change, and for how many frames that guess stays coherent.</p>
+
+        <p>The sections below follow the pipeline in the order a system runs it, then the choices that dominate quality: resolution, duration, aspect ratio, and identity. Open papers are the source for the mechanism. One hosted workspace appears later as a place where those choices show up as a file format, a model name, and a quote you can read before you spend anything.</p>
+
+        <nav class="toc" aria-label="On this page">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#where-it-runs">Choosing where the job runs</a></li>
+            <li><a href="#pipeline">From a still to a sequence of frames</a></li>
+            <li><a href="#choices">Choices that change the frames</a></li>
+            <li><a href="#research-and-hosted">Research code and hosted products</a></li>
+            <li><a href="#workspace">Formats, models, and the credit quote</a></li>
+            <li><a href="#reading-a-result">How to read a result</a></li>
+            <li><a href="#references">References</a></li>
+          </ol>
+        </nav>
+
+        <h2 id="where-it-runs">Choosing where the job runs</h2>
+        <p>Three setups show up constantly, and they answer different questions. A local research pipeline gives you weights, a GPU, and a seed, which is how you inspect conditioning. A single-purpose hosted generator is how a short clip gets made when nobody wants to operate that GPU. A multi-tool workspace places image-to-video beside image editing, video-to-video, and audio, so the still and the clip share an account.</p>
+        <p>For the mechanism, this note stays with the public literature. One multi-tool account is named once the pipeline stages are concrete, together with its formats, model catalog, and credit quote. Runway, Pika, and Luma appear further down as independent products. That comparison is a split of labor: who operates the GPU, the queue, and the files. Keep any quality judgment for the frames in front of you.</p>
+
+        <h2 id="pipeline">From a still to a sequence of frames</h2>
+        <p>Public research systems from 2023 and 2024 are mostly latent <a href="https://en.wikipedia.org/wiki/Diffusion_model">diffusion models</a>. A diffusion model learns to reverse a noising process. It starts from noise and takes many small steps toward a sample that fits its training distribution and the conditioning you supplied. Hosted catalogs now mix that pattern with later proprietary models, and those vendors do not always publish the architecture. The stages below are the ones the papers let you name. They remain a useful checklist when a product only offers a prompt box and a download.</p>
+        <p>The still enters as conditioning. Text, when you provide it, works as a motion hint — camera, wind, a small action — rather than as a second description of the whole scene.</p>
+
+        <ol class="pipeline">
+          <li>
+            <span class="step">1 · Encode</span>
+            <p>Compress the still into a latent and an image embedding that carries appearance.</p>
+          </li>
+          <li>
+            <span class="step">2 · Motion</span>
+            <p>Temporal layers or a motion module propose change. Camera is another condition, and it is not a 3D guarantee.</p>
+          </li>
+          <li>
+            <span class="step">3 · Decode</span>
+            <p>Latents become frames. Treat audio, when a clip has any, as its own check.</p>
+          </li>
+        </ol>
+        <p>The headings under this section unpack those stages from public papers. The worked example of a hosted account is <a href="https://mixvio.ai/?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=parasite_seo_pages&amp;utm_content=ai_image_to_video_home">MixVio</a>, a workspace for video, image, and audio, with image-to-video as a primary path. Its formats, model catalog, and credit quote are described after the practical constraints, because those constraints do not belong to one vendor. This page is an independent note. It does not speak for the companies it links to.</p>
+
+        <h3>Encode</h3>
+        <p>An autoencoder compresses the still into a spatial latent. A second network, often a CLIP-style image encoder, summarizes appearance so the denoiser is not limited to raw pixels. <a href="https://arxiv.org/abs/2311.15127">Stable Video Diffusion</a> writes this pattern down in public. The image-to-video fine-tune replaces the text embedding of the base model with the CLIP image embedding of the conditioning frame. It also concatenates a noise-augmented copy of that frame onto the U-Net input and copies it across time. The paper reports two fine-tunes, one predicting 14 frames and one predicting 25. The image-to-video checkpoint documented on its <a href="https://huggingface.co/stabilityai/stable-video-diffusion-img2vid">model card</a> generates 14 frames at 576×1024 from a conditioning frame of the same size.</p>
+        <p>The authors also record a sampling detail worth keeping. A constant classifier-free guidance scale can drift off the conditioning frame, or it can oversaturate. They increase guidance along the frame axis instead. When a hosted control labeled guidance or creativity seems to trade likeness for motion, that paper is the reference for why the trade exists.</p>
+
+        <h3>Motion and camera</h3>
+        <p>Temporal layers, or a module inserted into an image model, predict how the latent should change between frames. <a href="https://arxiv.org/abs/2307.04725">AnimateDiff</a> is the modular version of this idea. A motion module is trained once on real video, then inserted into personalized image models that share the same base, without retuning each character. MotionLoRA, in the same work, adapts that module to shot types such as zoom, pan, and roll using a small set of reference clips. Code and weights are public, which is why it is a better teaching object than a closed checkpoint of the same era.</p>
+        <p>Camera control sits on top of appearance as another conditioning channel. It does not establish that the model holds a consistent 3D scene. A requested push-in can be a change of scale in image space. Community pipelines for Stable Video Diffusion expose a related knob directly: a motion bucket that sets how much movement the sampler may introduce. The <a href="https://huggingface.co/docs/diffusers/main/using-diffusers/svd">Diffusers guide</a> is the practical entry point for the 14-frame and 25-frame checkpoints, including that control.</p>
+
+        <h3>Decode, and audio when a separate model provides it</h3>
+        <p>The latent sequence is decoded to RGB frames. Many image-to-video checkpoints are silent. The Stable Video Diffusion image-to-video weights are in that group. When a product returns a clip with sound, review the sound on its own. Mouth shape, room tone, and music can each fail while the picture looks acceptable. Picture and sound are separate acceptance tests.</p>
+        <p>Open weights are also a licensing question. The Stable Video Diffusion model card directs commercial use to Stability’s license. A checkpoint you can download is not, by itself, a commercial grant. Read the card that belongs to the weights you actually run.</p>
+
+        <h2 id="choices">Choices that change the frames</h2>
+
+        <h3>Resolution</h3>
+        <p>Start where a failure is cheap to see. A short test around 480p tells you whether the motion idea holds. Higher resolutions spend more compute and give flicker more pixels to occupy. Match the test to the aspect ratio you will publish. A strong 16:9 preview says little about a vertical frame.</p>
+
+        <h3>Duration</h3>
+        <p>Research checkpoints are short on purpose. Fourteen frames, or twenty-five, covers a few seconds at the frame rates used in the public demos. Frame count is not a 24&nbsp;fps timeline. A hosted product that offers a longer clip has trained a longer window, or it extends and stitches. A stitch is a new conditioning boundary. Identity is what usually breaks there. If a face holds for the first second and slips after that, shorten the clip before paying for a larger frame.</p>
+
+        <h3>Aspect ratio</h3>
+        <p>16:9, 9:16, and 1:1 are different compositions. Letterboxing a portrait and asking for landscape asks the model to invent the sides. For a phone frame, crop the still so the subject already sits inside 9:16. Do that in an editor, or with an image tool, before the video model spends its capacity on outpainting.</p>
+
+        <h3>Identity, logos, and type</h3>
+        <p>Faces, cloth patterns, logos, and small text slip first. The training objective rewards a frame that looks plausible at a glance. Preserving a trademark, or a stable line of interface copy, is a different objective, and current models miss it often. Wordmarks warp, respell themselves, or dissolve into texture within a few frames. The same thing happens to fine repeating detail: jewelry, frets, grilles, icons. When those pixels must stay exact, image-to-video is a draft for a later composite, or it is the wrong tool.</p>
+
+        <h3>Motion artifacts</h3>
+        <p>Limbs change count. Cloth boils. Shadows detach from the object. A camera path intersects furniture. Strong camera language competes with subject action. A whip-pan combined with a subtle expression often produces a muddy average of the two requests. Change one variable per test, and keep the source still beside the export so the invented pixels are obvious.</p>
+
+        <h3>The still versus the text</h3>
+        <p>A short motion note is enough for many models: a slow push-in, hair in a light breeze, a small turn of the head. A paragraph that redescribes the whole scene will contradict the photograph somewhere. When text and image disagree, different models pick different winners. Stepping through frames is how you learn which compromise you are running.</p>
+
+        <h3>The source file</h3>
+        <p>A heavily compressed JPEG, a tiny face, or a still that is already motion-blurred gives the encoder less to lock. Upscaling a soft image before generation does not restore identity. It can add a second layer of invented detail. Prefer the largest clean still you actually have the rights to use, then crop it to the target aspect ratio. Heavy sharpening and extreme contrast in the source tend to come back as flicker, because the temporal model has to repaint those edges on every frame.</p>
+
+        <h3>Seeds and repeatability</h3>
+        <p>A research pipeline lets you store a seed and a commit of the code. Hosted products often hide the seed, and they sometimes change the weights behind a display name. Store the model name, the date, the duration, the resolution, and the aspect ratio next to the file. A re-run next month can differ even when the prompt is identical. If you are comparing models, freeze the still and the motion note, and change only the model.</p>
+
+        <h3>Rights</h3>
+        <p>Generate from photographs and designs you have the right to animate. A model that preserves a stranger’s face has processed that person’s likeness. Commercial use depends on the plan and the terms of the specific product. An export button does not settle the question.</p>
+
+        <h2 id="research-and-hosted">Research code and hosted products</h2>
+        <p>Open checkpoints exist so the pipeline above can be read. Stable Video Diffusion and AnimateDiff are the two papers used here, and both have public implementations. The cost is operational: GPU memory, version pinning, and the gap between a notebook and a private file pipeline. In return you can hold the seed, read the conditioning code, and name a failure after the stage that caused it.</p>
+        <p>Hosted products hide that stack behind an account and a queue. Three independent examples are enough to see the shape of the category. <a href="https://runway.com/">Runway</a> publishes a cloud creative suite for generating and editing video, images, and audio, with a developer API beside the creative app. <a href="https://pika.art/">Pika</a> is a hosted creative platform with a video studio, image tools, and tools that extend a clip or score it. <a href="https://lumalabs.ai/">Luma</a> is a hosted creative workspace; its public product description includes animating a still into video as one operation on an image, next to editing and audio. Each product has moved through several model generations.</p>
+        <p>The Stable Video Diffusion paper, from 2023, used Runway Gen-2 and Pika Labs as closed-source comparison points in a preference study. Read that paper for the method and for the way an image-to-video fine-tune is conditioned. Treat the preference result as a historical comparison. For what those companies sell now, use their own sites. Model generations have moved since the paper was written.</p>
+        <p>The split of labor is the part worth keeping. Hosted tools put their effort into model choice, file handling, moderation, and a price you can read before you run. Research code puts its effort into reproducibility. A developer learning the task wants both. Papers name the stages. A hosted run is how you get a short MP4 when you are not operating a GPU. A paper will not tell you whether today’s checkpoint melts a logo. A product page will not tell you whether the temporal layer was trained the way AnimateDiff describes. Watch the frames either way.</p>
+
+        <h2 id="workspace">Formats, models, and the credit quote</h2>
+        <p>The <a href="https://mixvio.ai/tools/image-to-video?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=parasite_seo_pages&amp;utm_content=ai_image_to_video_tool">MixVio image to video</a> tool is the image-to-video path in the workspace named above. You supply a photo or other reference you own. The tool describes the result as a short private MP4. The frame shapes it offers are 9:16, 16:9, and 1:1. The catalog listed on that tool page has included Seedance 2.0, Seedance 2.5, MiniMax H3, Kling, Veo, Gemini Omni Flash, Wan, FLUX 3, Vidu Q4, and PixVerse V6. That list is a snapshot from 26 October 2026. Names rotate. The durable description is the narrower one: leading models, and the catalog grows.</p>
+        <p>The same still can be sent through more than one model in that catalog. That is the direct way to compare how tightly each model holds appearance. Keeping the look locked to the reference means the still remains the appearance anchor while the model supplies motion. Logos, small typography, and identity still drift under that setting. Check wordmarks, fine text, and faces on every export. Drift on those regions is ordinary for this class of model, and it applies on this tool as well.</p>
+        <aside class="callout">
+          <p><strong>Limitation to plan for.</strong> Identity, logos, and small typography drift. A reference lock keeps the still as the appearance anchor. It does not freeze lettering or a face across the whole clip. Inspect those regions before you treat an export as finished.</p>
+        </aside>
+        <div class="example">
+          <p class="label">Example quote on the tool page, 26 October 2026</p>
+          <p>Seedance 2.0 · 5 seconds · 480p · 33 credits (from $0.55).</p>
+          <p>The interface shows the exact credit quote for the settings you selected, before you submit. Log that number. If the generation fails, reserved credits are released, and the failed run costs no credits.</p>
+        </div>
+        <p>Eligible Google-connected accounts receive welcome credits for a trial. The current amount is stated on the product site. This note leaves the number there, because the grant can change. The free plan is for evaluation and has its own limits. Commercial use is permitted on paid plans under the terms of service.</p>
+        <p>The same account also includes text-to-video, video-to-video, motion control, image generation and editing, and effects. The wider site has named image models such as GPT Image alongside the video catalog. Availability changes there too. The shared account matters when the still needs a crop or a cleanup before it is a fair conditioning frame. Questions about an account go to <a href="mailto:support@mixvio.ai">support@mixvio.ai</a>.</p>
+
+        <h2 id="reading-a-result">How to read a result</h2>
+        <p>Play the clip once at speed and decide only whether the action reads. Then step through frames at the face, the hands, and any text or logo. Playback hides flicker that a contact sheet shows immediately. If likeness dies after a second, cut the duration. If one model holds the face and loses the room, keep the note and run the same still on another model. One checkpoint rarely wins every axis, so the useful record is which axis failed.</p>
+        <p>Write down the source image, the motion note, the model name, the duration, the resolution, the aspect ratio, and the credit quote beside the file. Catalogs rename models. A label that only says the result was the good one will not reproduce. A line that names the model and the still will.</p>
+        <p>Image-to-video is a strong draft when the composition already lives in the photograph and the motion is simple enough to judge: a push-in, a breeze, a small gesture, a background that shifts behind a stable subject. It is a poor way to produce a legally exact label, a user interface, or a likeness you do not have rights to animate. Read the quote before you submit. Keep the papers below next to the export. When a frame looks wrong, name the stage — identity, camera, or decode — and change that variable on the next run.</p>
+
+        <h2 id="references">References</h2>
+        <ul class="refs">
+          <li>Andreas Blattmann and colleagues, <a href="https://arxiv.org/abs/2311.15127">Stable Video Diffusion: Scaling Latent Video Diffusion Models to Large Datasets</a>, arXiv:2311.15127. Image-to-video conditioning, 14-frame and 25-frame fine-tunes, and guidance along the frame axis.</li>
+          <li>Yuwei Guo and colleagues, <a href="https://arxiv.org/abs/2307.04725">AnimateDiff: Animate Your Personalized Text-to-Image Diffusion Models without Specific Tuning</a>, arXiv:2307.04725. A plug-in motion module and MotionLoRA for shot types.</li>
+          <li><a href="https://en.wikipedia.org/wiki/Diffusion_model">Diffusion model</a>, Wikipedia. Background vocabulary for noise, latents, and iterative denoising.</li>
+          <li><a href="https://huggingface.co/docs/diffusers/main/using-diffusers/svd">Stable Video Diffusion</a>, Hugging Face Diffusers documentation, and the <a href="https://huggingface.co/stabilityai/stable-video-diffusion-img2vid">stabilityai/stable-video-diffusion-img2vid</a> model card. Frame count, resolution, and the commercial-license pointer.</li>
+          <li><a href="https://runway.com/">Runway</a>, <a href="https://pika.art/">Pika</a>, and <a href="https://lumalabs.ai/">Luma</a>. Product sites for the hosted examples named above. Their model lists move; the sites are the current source.</li>
+        </ul>
+      </article>
+    </main>
+    <footer class="site-footer">
+      <p>Updated <time datetime="2026-10-26">26 October 2026</time>. Product details for the hosted workspace were checked against its public site on that date. Model lists and credit examples change. The quote shown before submit is the number that applies to a run.</p>
+      <p>Article text is available under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Page code is under the <a href="LICENSE">MIT License</a>.</p>
+    </footer>
+  </div>
+</body>
+</html>
